@@ -1,0 +1,54 @@
+# Path configurations
+data:
+  root_dir: "C:\\Users\\evabo\\Documents\\Repos\\DCASE25"
+  train_csv: "DevelopmentSet\\biodcase_development_set\\train_all.csv"  # Path to your training CSV
+  val_csv: "DevelopmentSet\\biodcase_development_set\\validation_all.csv"      # Path to validation CSV
+
+# Acoustic parameters (matches FFT_parameters from wav_to_lms.py)
+preprocessing:
+  sample_rate: 16000
+  n_fft: 400
+  hop_length: 160
+  n_mels: 80
+  crop_frames: 608
+  norm_stats: [0.0, 1.0]
+  f_min: 50
+  f_max: 8000
+
+# Model configuration
+model:
+  input_size: [80, 608]  # [n_mels, time_frames]
+  num_classes: 7         # For 7 whale call types
+  name: "M2DViT"
+  decoder_depth: 12
+  target_layers: [ 4, 6, 8, 10 ]
+  off_emb_dim: 256
+
+# Training parameters
+training:
+  batch_size: 32
+  num_workers: 8
+  epochs: 100
+  start_epoch: 0
+  learning_rate: 0.001
+  patch_size: 16  # Example value
+  norm_pix_loss: True
+  loss_fn: "mse"
+  loss_m2d: 0.5
+  loss_off: 0.1
+  accum_iter: 4
+  pin_mem: True
+  weight_decay: 1e-4
+  betas: [0.9, 0.95]
+  resume: null
+  ema_decay_init: 0.999
+  feature_eval_freq: 1
+  bf16: False
+  save_freq: 1
+
+logging:
+  log_dir: "./logs"  # Directory for saving logs
+  checkpoint_dir: "./checkpoints"  # Directory for saving model checkpoints
+
+device: 'cpu'  # Change to 'cuda' if using a GPU
+seed: 42  # For reproducibility
