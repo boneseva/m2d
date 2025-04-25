@@ -14,12 +14,15 @@ Make a folder named `vis_samples` under the root folder of the dataset, and put 
     (data root)/vis_samples/(data samples for visualization).npy
       :
 """
+import os
 
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import torch
 import torch.nn.functional as F
+
+from raw_audio_dataset import RawAudioDataset
 
 
 class SpectrogramDataset(torch.utils.data.Dataset):
@@ -134,18 +137,28 @@ def get_files_no_sort(dataset_name):
     return pd.read_csv(str(dataset_name)).file_name.values
 
 
-def build_dataset(cfg):
+def build_dataset(cfg, mode='train'):
     """The followings configure the training dataset details.
         - data_path: Root folder of the training dataset.
         - dataset: The _name_ of the training dataset, an stem name of a `.csv` training data list.
         - norm_stats: Normalization statistics, a list of [mean, std].
         - input_size: Input size, a list of [# of freq. bins, # of time frames].
     """
+    assert mode in ['train', 'val']
 
-    transforms = None # Future options: torch.nn.Sequential(*transforms) if transforms else None
     norm_stats = cfg.norm_stats if 'norm_stats' in cfg else None
-    ds = SpectrogramDataset(folder=cfg.data_path, files=get_files(cfg.dataset), crop_frames=cfg.input_size[1],
-            tfms=transforms, norm_stats=norm_stats)
+    transforms = None # ADD
+
+    ds = RawAudioDataset(
+        root_dir=os.path.join(cfg.data.root_dir, mode),  # Root folder containing raw `.wav` files
+        crop_frames=cfg.input_size[1],  # Number of time frames per sample
+        sample_rate=16000,  # Sampling rate (matches FFT_parameters)
+        n_fft=400,  # FFT window size
+        hop_length=160,  # Hop size
+        n_mels=80,
+        tfms=transforms,
+        norm_stats=norm_stats
+    )
     return ds
 
 
@@ -172,9 +185,17 @@ class MixedSpecDataset(torch.utils.data.Dataset):
                  random_crop=True, n_norm_calc=10000) -> None:
         super().__init__()
 
-        self.ds1 = SpectrogramDataset(folder=base_folder, files=files_main, crop_frames=crop_size[1],
-                random_crop=random_crop, norm_stats=None,
-                n_norm_calc=n_norm_calc//2)
+        #self.ds1 = SpectrogramDataset(folder=base_folder, files=files_main, crop_frames=crop_size[1],
+        #        random_crop=random_crop, norm_stats=None,
+        #        n_norm_calc=n_norm_calc//2)
+        self.ds1 = RawAudioDataset(
+            root_dir=base_folder,  # Root folder containing raw `.wav` files
+            crop_frames=crop_size[1],  # Number of time frames per sample
+            sample_rate=16000,  # Sampling rate (matches FFT_parameters)
+            n_fft=400,  # FFT window size
+            hop_length=160,  # Hop size
+            n_mels=80  # Number of Mel bands
+        )
         self.norm_stats = self.ds1.norm_stats  # for compatibility with SpectrogramDataset
         # disable normalizion scaling in the ds1
         self.norm_std = self.ds1.norm_stats[1]

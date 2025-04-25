@@ -124,7 +124,7 @@ def get_backbone(args, weight_file, encoder_only, dur_frames):
         print(' **CAUTION: Random Weights**')
         logging.info(' **CAUTION: Random Weights**')
     else:
-        checkpoint = torch.load(weight_file, map_location='cpu')
+        checkpoint = torch.load(weight_file, map_location='cpu', weights_only=False)
         checkpoint = checkpoint['model'] if 'model' in checkpoint else checkpoint
         checkpoint = reformat_evar_ckpt(checkpoint)
         # determine # of decoder blocks: "decoder_blocks.1." or "decoder_blocks.layers.1" or nothing
